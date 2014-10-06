@@ -35,7 +35,6 @@ sub PCI_register {
     $self->{In_channels} = 1   if !defined $self->{In_channels};
     $self->{In_private}  = 1   if !defined $self->{In_private};
     $self->{rx_cmd_args} = qr/^(\S+)(?:\s+(.+))?$/;
-    $self->{irc} = $irc;
 
     $irc->plugin_register( $self, 'SERVER', qw(msg public) );
     return 1;
@@ -63,7 +62,7 @@ sub S_msg {
         return PCI_EAT_NONE;
     }
 
-    $self->_handle_cmd($who, $where, $cmd, $args);
+    $self->_handle_cmd($irc, $who, $where, $cmd, $args);
     return $self->{Eat} ? PCI_EAT_PLUGIN : PCI_EAT_NONE;
 }
 
@@ -89,7 +88,7 @@ sub S_public {
         return PCI_EAT_NONE;
     }
 
-    $self->_handle_cmd($who, $where, $cmd, $args);
+    $self->_handle_cmd($irc, $who, $where, $cmd, $args);
     return $self->{Eat} ? PCI_EAT_PLUGIN : PCI_EAT_NONE;
 }
 
@@ -101,8 +100,7 @@ sub _normalize {
 }
 
 sub _handle_cmd {
-    my ($self, $who, $where, $cmd, $args) = @_;
-    my $irc = $self->{irc};
+    my ($self, $irc, $who, $where, $cmd, $args) = @_;
     my $chantypes = join('', @{ $irc->isupport('CHANTYPES') || ['#', '&']});
     my $public = $where =~ /^[$chantypes]/ ? 1 : 0;
     $cmd = lc $cmd;
@@ -171,7 +169,7 @@ sub _handle_cmd {
     }
 
     if (ref $self->{Auth_sub} eq 'CODE') {
-        my ($authed, $errors) = $self->{Auth_sub}->($self->{irc}, $who, $where, $cmd, $args, $cmd_unresolved);
+        my ($authed, $errors) = $self->{Auth_sub}->($irc, $who, $where, $cmd, $args, $cmd_unresolved);
 
         if (!$authed) {
             my @errors = ref $errors eq 'ARRAY'
@@ -189,11 +187,11 @@ sub _handle_cmd {
         $irc->send_event_next($handler => $who, $where, $args, $cmd, $cmd_unresolved);
     }
     elsif ($cmd =~ /^help$/i) {
-        my @help = $self->_get_help($args, $public);
+        my @help = $self->_get_help($irc, $args, $public);
         $irc->yield($self->{Method} => $where => $_) for @help;
     }
     elsif (!$self->{Ignore_unknown}) {
-        my @help = $self->_get_help($cmd, $public);
+        my @help = $self->_get_help($irc, $cmd, $public);
         $irc->yield($self->{Method} => $where => $_) for @help;
     }
 
@@ -201,8 +199,7 @@ sub _handle_cmd {
 }
 
 sub _get_help {
-    my ($self, $args, $public) = @_;
-    my $irc = $self->{irc};
+    my ($self, $irc, $args, $public) = @_;
     my $p = $self->{Addressed} && $public
         ? $irc->nick_name().': '
         : $self->{Prefix};
@@ -288,7 +285,7 @@ sub _get_help {
 
         my $cmd_resolved = $self->resolve_alias($cmd) || $cmd;
 
-        return $self->{'Help_sub'}->($self->{irc}, $cmd, $cmd_resolved, $args, @help);
+        return $self->{'Help_sub'}->($irc, $cmd, $cmd_resolved, $args, @help);
     }
     else
     {
