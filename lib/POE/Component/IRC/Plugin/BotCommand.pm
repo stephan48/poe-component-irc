@@ -187,11 +187,11 @@ sub _handle_cmd {
         $irc->send_event_next($handler => $who, $where, $args, $cmd, $cmd_unresolved);
     }
     elsif ($cmd =~ /^help$/i) {
-        my @help = $self->_get_help($irc, $args, $public);
+        my @help = $self->_get_help($irc, $who, $where, $args, $public);
         $irc->yield($self->{Method} => $where => $_) for @help;
     }
     elsif (!$self->{Ignore_unknown}) {
-        my @help = $self->_get_help($irc, $cmd, $public);
+        my @help = $self->_get_help($irc, $who, $where, $cmd, $public);
         $irc->yield($self->{Method} => $where => $_) for @help;
     }
 
@@ -199,7 +199,7 @@ sub _handle_cmd {
 }
 
 sub _get_help {
-    my ($self, $irc, $args, $public) = @_;
+    my ($self, $irc, $who, $where, $args, $public) = @_;
     my $p = $self->{Addressed} && $public
         ? $irc->nick_name().': '
         : $self->{Prefix};
@@ -285,7 +285,7 @@ sub _get_help {
 
         my $cmd_resolved = $self->resolve_alias($cmd) || $cmd;
 
-        return $self->{'Help_sub'}->($irc, $cmd, $cmd_resolved, $args, @help);
+        return $self->{'Help_sub'}->($irc, $who, $where, $cmd, $cmd_resolved, $args, @help);
     }
     else
     {
