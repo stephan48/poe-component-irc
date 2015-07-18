@@ -24,17 +24,18 @@ sub new {
         }
         $args{Commands}->{lc $cmd} = delete $args{Commands}->{$cmd};
     }
+
+    $args{Addressed}   = 1   if !defined $args{Addressed};
+    $args{Prefix}      = '!' if !defined $args{Prefix};
+    $args{In_channels} = 1   if !defined $args{In_channels};
+    $args{In_private}  = 1   if !defined $args{In_private};
+    $args{rx_cmd_args} = qr/^(\S+)(?:\s+(.+))?$/;
+
     return bless \%args, $package;
 }
 
 sub PCI_register {
     my ($self, $irc) = splice @_, 0, 2;
-
-    $self->{Addressed}   = 1   if !defined $self->{Addressed};
-    $self->{Prefix}      = '!' if !defined $self->{Prefix};
-    $self->{In_channels} = 1   if !defined $self->{In_channels};
-    $self->{In_private}  = 1   if !defined $self->{In_private};
-    $self->{rx_cmd_args} = qr/^(\S+)(?:\s+(.+))?$/;
 
     $irc->plugin_register( $self, 'SERVER', qw(msg public) );
     return 1;
