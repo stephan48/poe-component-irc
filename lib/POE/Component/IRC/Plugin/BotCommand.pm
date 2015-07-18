@@ -29,7 +29,7 @@ sub new {
     $args{Prefix}      = '!' if !defined $args{Prefix};
     $args{In_channels} = 1   if !defined $args{In_channels};
     $args{In_private}  = 1   if !defined $args{In_private};
-    $args{rx_cmd_args} = qr/^(\S+)(?:\s+(.+))?$/;
+    $args{rx_cmd_args} = qr/^(\S+)(?:\s+(.+))?$/ if !defined $args{rx_cmd_args};
 
     return bless \%args, $package;
 }
